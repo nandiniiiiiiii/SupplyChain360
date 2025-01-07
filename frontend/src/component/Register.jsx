@@ -1,16 +1,36 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
+import { gql, useMutation } from "@apollo/client";
+
+// GraphQL Mutation for Registration
+const REGISTER_MUTATION = gql`
+  mutation register($username: String!, $email: String!, $password: String!, $role: String!) {
+    register(username: $username, email: $email, password: $password, role: $role) {
+        message
+        token
+        user {
+            username
+            email
+            password
+            role
+      }
+    }
+  }
+`;
 
 function Register() {
     const [formData, setFormData] = useState({
+        username: "",
         email: "",
         password: "",
-        username: "",
         role: "", // Ensure this matches the value type expected by the dropdown
     });
     const [message, setMessage] = useState("");
     const navigate = useNavigate();
+
+    // Apollo Mutation Hook
+    const [register, { data, loading, error }] = useMutation(REGISTER_MUTATION);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -20,19 +40,24 @@ function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post("http://localhost:5000/api/auth/register", formData);
-            setMessage(response.data.message || "Registration successful!");
-            console.log(response)
+            console.log(formData)
+            const { data } = await register({
+                variables: formData,
+            });
+            console.log("hello", data)
 
-            if (response.status === 201) {
-                const data = response.data;
+            setMessage(data.register.message || "Registration successful!");
+
+            if (data && data.register.token) {
+                const token = data.register.token;
+                const role = data.register.user.role.trim()
 
                 // Save token and role
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('role', data.role);
+                localStorage.setItem('token', token);
+                localStorage.setItem('role', role);
 
-                // Redirect to the respective dashboard
-                switch (data.role) {
+                // Redirect to the respective dashboard based on the role
+                switch (role) {
                     case 'Factory Manager':
                         navigate('/factory-dashboard');
                         break;
@@ -41,9 +66,9 @@ function Register() {
                         break;
                     case 'Analyst':
                         navigate('/analyst-dashboard');
-                        console.log("Analyst")
                         break;
                     case 'Executives':
+                        console.log(role)
                         navigate('/executive-dashboard');
                         break;
                     case 'Support':
@@ -59,7 +84,7 @@ function Register() {
                 alert('Registration failed!');
             }
         } catch (err) {
-            setMessage(err.response?.data?.message || "Error during registration.[2]");
+            setMessage(err.message || "Error during registration.");
             console.error("Error during registration:", err);
         }
     };

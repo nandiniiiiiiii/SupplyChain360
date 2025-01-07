@@ -1,22 +1,33 @@
 import React from 'react'
 import { Link, useNavigate } from "react-router-dom";
+import { gql, useMutation } from '@apollo/client';
+
+const LOGOUT_MUTATION = gql`
+  mutation logout {
+    logout {
+      success
+      message
+    }
+  }
+`;
 
 function Sidebar() {
   const navigate = useNavigate();
+  const [logout, { loading, error, data }] = useMutation(LOGOUT_MUTATION);
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:5000/api/auth/logout", null, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      localStorage.removeItem("token"); // Remove token from localStorage
-      localStorage.removeItem('role');
-
-      // Redirect to the login page
-      navigate('/login');
-      alert("Logged out successfully!");
+      const response = await logout();
+      if (response.data.logout.success) {
+        // Clear local storage or any other client-side storage
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        
+        // Redirect to login or home page
+        navigate('/');
+      } else {
+        console.error('Logout failed:', response.data.logout.message);
+      }
     } catch (err) {
       alert(err.response?.data?.message || "Error during logout.");
     }

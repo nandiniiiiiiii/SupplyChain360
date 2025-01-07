@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { createBrowserRouter, RouterProvider, BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Register from './component/Register'
 import Login from './component/Login'
@@ -11,6 +11,13 @@ import ExternalUser from "./pages/ExternalUsers"
 import Analyst from "./pages/Analyst"
 import Executives from "./pages/Executives"
 import ProtectedRoute from "./context/ProtectedRoute"
+import { gql, useQuery } from '@apollo/client'
+
+const GET_QUERY = gql`
+  query Query {
+    test
+  }
+`;
 
 function App() {
   const token = localStorage.getItem("token");
@@ -37,73 +44,73 @@ function App() {
   return (
     <>
       <Router>
+        {/* Public Routes */}
+        <Routes>
           {/* Public Routes */}
-          <Routes>
-            {/* Public Routes */}
-            <Route
-              path="/"
-              element={
-                token ? (
-                  <Navigate to={redirectToDashboard()} replace={true} />
-                ) : (
-                  <Home />
-                )
-              }
-            />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+          <Route
+            path="/"
+            element={
+              token ? (
+                <Navigate to={redirectToDashboard()} replace={true} />
+              ) : (
+                <Home />
+              )
+            }
+          />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/factory-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['Factory Manager']}>
-                  <FactoryManager />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/logistics-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['Logistics Manager']}>
-                  <LogisticsManager />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/analyst-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['Analyst']}>
-                  <Analyst />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/executive-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['Factory Manager', 'Logistics Manager', 'Analyst', 'Support', 'External Users']}>
-                  <Executives />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/support-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['Support']}>
-                  <Support />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/external-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['External Users']}>
-                  <ExternalUser />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          {/* Protected Routes */}
+          <Route
+            path="/factory-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['Factory Manager']}>
+                <FactoryManager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/logistics-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['Logistics Manager']}>
+                <LogisticsManager />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analyst-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['Analyst']}>
+                <Analyst />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/executive-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['Executives']}>
+                <Executives />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/support-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['Support']}>
+                <Support />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/external-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['External Users']}>
+                <ExternalUser />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
       </Router>
     </>
   )

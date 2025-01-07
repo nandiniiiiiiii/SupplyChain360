@@ -1,6 +1,15 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { gql, useMutation } from "@apollo/client";
+
+const LOGIN_MUTATION = gql`
+    mutation Login($email: String!, $password: String!) {
+        login(email: $email, password: $password) {
+            token
+            role
+        }
+    }
+`;
 
 function Login() {
     const [formData, setFormData] = useState({
@@ -10,6 +19,9 @@ function Login() {
     const [message, setMessage] = useState("");
     const navigate = useNavigate();
 
+    // GraphQL mutation hook
+    const [login] = useMutation(LOGIN_MUTATION);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -17,45 +29,44 @@ function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setMessage("");
+
         try {
-            const response = await axios.post("http://localhost:5000/api/auth/login", formData);
-            setMessage("Login successful!");
-            if (response.ok) {
-                const data = await response.json();
+            const { data } = await login({
+                variables: {
+                    email: formData.email,
+                    password: formData.password,
+                },
+            });
 
-                // Save token and role
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('role', data.role);
+            if (data && data.login) {
+                const { token, role } = data.login;
 
-                // Redirect to the respective dashboard
-                switch (data.role) {
-                    case 'Factory Manager':
-                        navigate('/factory-dashboard');
-                        break;
-                    case 'Logistics Manager':
-                        navigate('/logistics-dashboard');
-                        break;
-                    case 'Analyst':
-                        navigate('/analyst-dashboard');
-                        break;
-                    case 'Executives':
-                        navigate('/executive-dashboard');
-                        break;
-                    case 'Support':
-                        navigate('/support-dashboard');
-                        break;
-                    case 'External Users':
-                        navigate('/external-dashboard');
-                        break;
-                    default:
-                        navigate('/');
-                }
+                // Save token and role to localStorage
+                localStorage.setItem("token", token);
+                localStorage.setItem("role", role);
+
+                setMessage("Login successful!");
+
+                // Redirect based on role
+                const roleToPathMap = {
+                    "Factory Manager": "/factory-dashboard",
+                    "Logistics Manager": "/logistics-dashboard",
+                    "Analyst": "/analyst-dashboard",
+                    "Executives": "/executive-dashboard",
+                    "Support": "/support-dashboard",
+                    "External Users": "/external-dashboard",
+                };
+
+                navigate(roleToPathMap[role] || "/"); // Default to home if role doesn't match
             } else {
-                alert('Registration failed!');
+                setMessage("Login failed. Please check your credentials.");
             }
-
         } catch (err) {
-            setMessage(err.response?.data?.message || "Error during login.");
+            setMessage(err.message || "An error occurred during login.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -111,9 +122,9 @@ function Login() {
                 )}
                 <p className="mt-4 text-center text-sm text-gray-600">
                     Don't have an account?{" "}
-                    <a href="/register" className="text-blue-600 hover:underline">
+                    <Link to="/register" className="text-blue-600 hover:underline">
                         Register here
-                    </a>
+                    </Link>
                 </p>
             </div>
         </div>
