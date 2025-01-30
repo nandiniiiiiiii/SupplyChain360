@@ -8,6 +8,7 @@ const { schema } = require('./schemas/schema.js');
 const { login, register, logout } = require('./controlers/user.controler.js');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4'); // Correct import
+const { getallproducts, getProductById } = require('./controlers/inventory.controler.js');
 
 // ApolloServer instance
 const server = new ApolloServer({
@@ -15,12 +16,16 @@ const server = new ApolloServer({
   resolvers: {
     Query: {
       test: () => "GraphQL is working!",
+      getallproducts: getallproducts,
+      getProductById: async (_, { id }) => {
+        return await getProductById(id);
+      },
     },
     Mutation: {
       register: register, // Add the register resolver
       login: login,
       logout: logout
-    },
+    }
   }
 });
 
@@ -33,7 +38,11 @@ dotenv.config({
 async function startServer() {
   await server.start(); // Wait for Apollo server to start
 
-  app.use(cors()); // Enable CORS for REST endpoints
+  app.use(cors({
+    origin: '*', // Replace with your frontend origin for security
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
   app.use(express.json());
 
   app.get('/', (req, res) => {
@@ -41,7 +50,12 @@ async function startServer() {
   });
 
   // Set up GraphQL endpoint with expressMiddleware
-  app.use('/graphql', expressMiddleware(server)); // Pass server instance here
+  app.use('/graphql', expressMiddleware(server, {
+    context: async ({ req }) => {
+      const token = req.headers.authorization || '';
+      return { headers: req.headers, token };
+    }
+  })); // Pass server instance here
 
   // Connect to the database and start the server
   try {

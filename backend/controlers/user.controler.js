@@ -121,11 +121,12 @@ let tokenBlacklist = new Set(); // In-memory store for simplicity
 
 const logout = async (parent, args, context) => {
   try {
-    const authorizationHeader = context.headers.authorization;
+    console.log(context)
+    const authorizationHeader = context?.headers?.authorization;
     if (!authorizationHeader) {
       throw new Error('Authorization header missing');
     }
-    
+
     const token = authorizationHeader?.split(' ')[1]; // Extract token from the Authorization header
 
     if (token) {

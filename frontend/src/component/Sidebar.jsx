@@ -11,9 +11,18 @@ const LOGOUT_MUTATION = gql`
   }
 `;
 
-function Sidebar() {
+function Sidebar({ menuItems }) {
   const navigate = useNavigate();
-  const [logout, { loading, error, data }] = useMutation(LOGOUT_MUTATION);
+  const token = localStorage.getItem('token');
+  console.log(token)
+
+  const [logout, { loading }] = useMutation(LOGOUT_MUTATION, {
+    context: {
+      headers: {
+        Authorization: token ? `Bearer ${token} ` : '', // Add the Authorization header
+      },
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -36,6 +45,15 @@ function Sidebar() {
   return (
     <div className="h-screen w-64 bg-gray-800 text-white flex flex-col p-4">
       <h2 className="text-lg font-semibold mb-6">Sidebar</h2>
+      <div>
+      {menuItems.map((item, index) => (
+        <Link key={index} to={item.link} className="hover:text-gray-400">
+          <button className="w-full px-4 py-2 mb-2 bg-blue-500 rounded hover:bg-blue-600">
+            {item.name}
+          </button>
+        </Link>
+      ))}
+      </div>
       <Link to="/register" className="hover:text-gray-400">
         <button className="w-full px-4 py-2 mb-4 bg-blue-500 rounded hover:bg-blue-600">Create New user</button>
       </Link>
